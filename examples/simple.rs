@@ -11,8 +11,18 @@ fn main() {
     let balancer = Balancer::new();
     balancer.work_local(&data, work);
     let output = balancer.collect();
+
+    // That's it!
+    // Let's do some verification
     if balancer.rank == 0 {
-        let output = output.unwrap();
+        for (expected, actual) in data.iter().map(work).zip(output.as_ref().unwrap()) {
+            assert_eq!(expected, *actual);
+        }
+    }
+
+    // Print values
+    if balancer.rank == 0 {
+        let output = output.as_ref().unwrap();
         println!(
             "rank {} has output [{}, {}, {}, ..] with length {}",
             balancer.rank,
