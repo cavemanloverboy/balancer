@@ -90,7 +90,7 @@ where
     /// Distributes items for work
     pub fn distribute<'b, I>(&self, items: Option<Vec<I>>) -> Option<Vec<I>>
     where
-        I: Send + Sync + Clone + Equivalence,
+        I: Send + Sync + Equivalence,
     {
         // Gather and return local set of items
         if self.rank == 0 && self.size > 1 {
