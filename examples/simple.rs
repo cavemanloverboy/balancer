@@ -2,7 +2,7 @@ use balancer::Balancer;
 
 fn main() {
     // Get relevant portion of data on this node
-    let data: Vec<f64> = (0..100_000).map(|x| x as f64 / 100_000.).collect();
+    let data: Vec<f64> = (0..100_000).map(|x| x as f64 / 100_000.0).collect();
 
     // Define task
     let work = |x: &f64| x * x;
