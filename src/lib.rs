@@ -52,14 +52,13 @@ where
     }
 
     /// Calculates local set of items on which to work on.
-    pub fn work_local<'b, I, F>(&self, items: &'b [I], work: F)
+    pub fn work_subset<'b, I, F>(&self, items: &'b [I], work: F)
     where
         I: Send + Sync,
         F: Fn(&'b I) -> O + Send + Sync,
         O: Send,
     {
         // Gather and return local set of items
-        let total = items.len();
         let chunk_size = div_ceil(items.len(), self.size);
         let (l, r) = (
             self.rank * chunk_size,
@@ -71,7 +70,46 @@ where
         let output = our_items.into_par_iter().map(|i| work(i)).collect();
 
         // Save work
-        self.work.set(Some(LocalWork { output, total }));
+        self.work.set(Some(LocalWork { output }));
+    }
+
+    /// Works on the entire set provided
+    pub fn work<'b, I, F>(&self, items: &'b [I], work: F)
+    where
+        I: Send + Sync,
+        F: Fn(&'b I) -> O + Send + Sync,
+        O: Send,
+    {
+        // Carry out work on local node threads
+        let output = items.into_par_iter().map(|i| work(i)).collect();
+
+        // Save work
+        self.work.set(Some(LocalWork { output }));
+    }
+
+    /// Distributes items for work
+    pub fn distribute<'b, I>(&self, items: Option<Vec<I>>) -> Option<Vec<I>>
+    where
+        I: Send + Sync + Clone + Equivalence,
+    {
+        // Gather and return local set of items
+        if self.rank == 0 && self.size > 1 {
+            let mut items = items.unwrap();
+            let chunk_size = div_ceil(items.len(), self.size);
+            let mut rank = 1;
+            let ours: Vec<I> = items.drain(..chunk_size).collect();
+            while !items.is_empty() {
+                let theirs: Vec<I> = items.drain(..chunk_size).collect();
+                self.world.process_at_rank(rank).send(&theirs);
+                rank += 1
+            }
+            self.world.barrier();
+            Some(ours)
+        } else {
+            let (ours, _status) = self.world.process_at_rank(0).receive_vec();
+            self.world.barrier();
+            Some(ours)
+        }
     }
 
     pub fn collect(&self) -> Option<Vec<O>> {
@@ -80,9 +118,6 @@ where
         let mut output: Vec<O> = work.output;
 
         if self.rank == 0 {
-            // Allocate for all output
-            output.reserve_exact(work.total - output.len());
-
             // Collect outputs from all other ranks
             for rank in 1..self.size {
                 let (mut rank_output, _status) =
@@ -91,10 +126,12 @@ where
             }
 
             // If rank 0 return output
+            self.world.barrier();
             Some(output)
         } else {
             self.world.process_at_rank(0).send(&output);
             // If not rank 0 return None
+            self.world.barrier();
             None
         }
     }
@@ -114,5 +151,4 @@ fn div_ceil(a: usize, b: usize) -> usize {
 
 pub struct LocalWork<O> {
     output: Vec<O>,
-    total: usize,
 }

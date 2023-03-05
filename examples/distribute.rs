@@ -5,9 +5,15 @@ use mpi::{environment::Universe, traits::Communicator};
 
 fn main() {
     let universe = Arc::new(mpi::initialize().unwrap());
-    experiment(universe.clone());
-    experiment(universe.clone());
-    if universe.world().rank() == 0 {
+    let world = universe.world();
+    for _ in 0..1000 {
+        if world.rank() == 0 {
+            experiment(universe.clone());
+        } else {
+            helper(universe.clone());
+        }
+    }
+    if world.rank() == 0 {
         println!("done!");
     }
 }
@@ -22,7 +28,8 @@ fn experiment(universe: Arc<Universe>) {
     // Initialize balancer, work and collect
     let verbose = false;
     let balancer = Balancer::new(universe, verbose);
-    balancer.work_subset(&data, work);
+    let ours = balancer.distribute(Some(data.clone())).unwrap();
+    balancer.work(&ours, work);
     let output = balancer.collect();
 
     // That's it!
@@ -32,4 +39,20 @@ fn experiment(universe: Arc<Universe>) {
             assert_eq!(expected, *actual);
         }
     }
+}
+
+fn helper(universe: Arc<Universe>) {
+    // Initialize balancer
+    let verbose = false;
+    let balancer = Balancer::new(universe, verbose);
+
+    // Get relevant portion of data on this node
+    // rank !=0 passes in none
+    let data: Vec<f64> = balancer.distribute(None).unwrap();
+
+    // Define task
+    let work = |x: &f64| x * x;
+
+    balancer.work(&data, work);
+    balancer.collect();
 }
