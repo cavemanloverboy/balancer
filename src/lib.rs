@@ -1,4 +1,5 @@
 use std::cell::Cell;
+use std::sync::Arc;
 
 use mpi::environment::Universe;
 use mpi::topology::{Communicator, SystemCommunicator};
@@ -9,7 +10,7 @@ use rayon::prelude::*;
 pub struct Balancer<O> {
     // This has a custom drop impl which calls MPI_FINALIZE so it needs to hang around
     #[allow(unused)]
-    universe: Universe,
+    universe: Arc<Universe>,
     world: SystemCommunicator,
     pub workers: usize,
     pub rank: usize,
@@ -22,9 +23,8 @@ where
     O: Send + Equivalence,
 {
     /// Constructs a new `Balancer` from an `mpi::SystemCommunicator` a.k.a. `world`.
-    pub fn new() -> Self {
+    pub fn new(universe: Arc<Universe>, verbose: bool) -> Self {
         // Initialize mpi
-        let universe = mpi::initialize().unwrap();
         let world = universe.world();
 
         // This is the maximum number of `JoinHandle`s allowed.
@@ -35,7 +35,7 @@ where
         let rank: usize = world.rank() as usize;
         let size: usize = world.size() as usize;
 
-        if rank == 0 {
+        if rank == 0 && verbose {
             println!("--------- Balancer Activated ---------");
             println!("            Nodes : {size}");
             println!(" Workers (rank 0) : {workers} ");
