@@ -26,7 +26,7 @@ fn experiment(universe: Arc<Universe>) {
     // Initialize balancer, work and collect
     let verbose = false;
     let balancer = Balancer::new(universe, verbose);
-    balancer.work_local(&data, work);
+    balancer.work_subset(&data, work);
     let output = balancer.collect();
 
     // That's it!
