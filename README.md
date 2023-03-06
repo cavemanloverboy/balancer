@@ -17,15 +17,17 @@ fn main() {
 }
 
 fn experiment(universe: Arc<Universe>) {
-    // Get relevant portion of data on this node
+    // Get all data on all nodes
     let data: Vec<f64> = (0..100_000).map(|x| x as f64 / 100_000.0).collect();
 
     // Define task
     let work = |x: &f64| x * x;
 
-    // Initialize balancer, work and collect
+    // Initialize balancer
     let verbose = false;
     let balancer = Balancer::new(universe, verbose);
+    
+    // Work on our subset and collect result on root node
     balancer.work_subset(&data, work);
     let output = balancer.collect();
 
