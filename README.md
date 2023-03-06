@@ -4,6 +4,8 @@ With the power of `rayon` and `mpi`, internode and intranode parallelism is achi
 
 ## Example Usage
 See `examples/simple.rs`.
+
+Build the executable `cargo build --release --example simple`. Then, run via `mpirun -np 2 ./target/release/examples/simple`.
 ```rust
 use std::sync::Arc;
 
