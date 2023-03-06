@@ -154,6 +154,11 @@ where
     pub fn barrier(&mut self) {
         self.world.barrier();
     }
+
+    pub fn world(&self) -> &SystemCommunicator {
+        &self.world
+    }
+
     pub fn synchronize_value<T: Equivalence>(&self, value: &mut T) {
         self.world.process_at_rank(0).broadcast_into(value);
     }
