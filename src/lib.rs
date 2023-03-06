@@ -99,7 +99,7 @@ where
             let mut rank = 1;
             let ours: Vec<I> = items.drain(..chunk_size).collect();
             while !items.is_empty() {
-                let theirs: Vec<I> = items.drain(..chunk_size).collect();
+                let theirs: Vec<I> = items.drain(..chunk_size.min(items.len())).collect();
                 self.world.process_at_rank(rank).send(&theirs);
                 rank += 1
             }
