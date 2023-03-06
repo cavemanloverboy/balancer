@@ -1,6 +1,7 @@
 use std::cell::Cell;
 use std::sync::Arc;
 
+use mpi::collective::SystemOperation;
 use mpi::environment::Universe;
 use mpi::topology::{Communicator, SystemCommunicator};
 use mpi::traits::*;
@@ -153,7 +154,7 @@ where
     }
 
     /// Waits for all threads to finish across all ranks.
-    pub fn barrier(&mut self) {
+    pub fn barrier(&self) {
         self.world.barrier();
     }
 
