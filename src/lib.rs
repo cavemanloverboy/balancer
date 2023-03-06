@@ -6,6 +6,8 @@ use mpi::topology::{Communicator, SystemCommunicator};
 use mpi::traits::*;
 use rayon::prelude::*;
 
+pub use mpi::traits::Equivalence;
+
 /// This struct helps manage compute on a given node and across nodes
 pub struct Balancer<O> {
     // This has a custom drop impl which calls MPI_FINALIZE so it needs to hang around
