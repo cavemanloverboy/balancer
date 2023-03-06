@@ -52,6 +52,20 @@ where
     }
 
     /// Calculates local set of items on which to work on.
+    pub fn get_subset<'b, I>(&self, items: &'b [I]) -> &'b [I]
+    where
+        I: Send + Sync,
+    {
+        // Gather and return local set of items
+        let chunk_size = div_ceil(items.len(), self.size);
+        let (l, r) = (
+            self.rank * chunk_size,
+            ((self.rank + 1) * chunk_size).min(items.len()),
+        );
+        &items[l..r]
+    }
+
+    /// Calculates local set of items on which to work on, and then works on it.
     pub fn work_subset<'b, I, F>(&self, items: &'b [I], work: F)
     where
         I: Send + Sync,
